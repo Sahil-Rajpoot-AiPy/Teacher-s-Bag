@@ -14,18 +14,43 @@ export const Materials: React.FC = () => {
   const [currentSubject, setCurrentSubject] = useState<SubjectData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const resolveVideoId = (material: MaterialData) => {
+    if (material.youtubeVideoId) return material.youtubeVideoId;
+    if (!material.videoUrl) return '';
+    if (material.videoUrl.includes('youtu.be/')) {
+      return material.videoUrl.split('youtu.be/')[1]?.split(/[?&]/)[0] || '';
+    }
+    try {
+      const parsed = new URL(material.videoUrl);
+      return parsed.searchParams.get('v') || '';
+    } catch {
+      return '';
+    }
+  };
+
   useEffect(() => {
-    if (subjectId && user?.email) {
+    if (subjectId && user?.uid) {
       const loadData = async () => {
         try {
-          const [materialsData, subjectData, completedData] = await Promise.all([
+          const [materialsResult, subjectResult, completedResult] = await Promise.allSettled([
             fetchMaterialsBySubject(subjectId),
             fetchSubjectById(subjectId),
-            fetchCompletedLessons(user.email, subjectId)
+            fetchCompletedLessons(user.uid, subjectId, user.email),
           ]);
-          setMaterials(materialsData);
-          setCurrentSubject(subjectData);
-          setCompletedIds(completedData);
+
+          if (materialsResult.status === 'fulfilled') {
+            setMaterials(materialsResult.value);
+          }
+
+          if (subjectResult.status === 'fulfilled') {
+            setCurrentSubject(subjectResult.value);
+          }
+
+          if (completedResult.status === 'fulfilled') {
+            setCompletedIds(completedResult.value);
+          } else {
+            setCompletedIds([]);
+          }
         } catch (error) {
           console.error('Error loading materials:', error);
         } finally {
@@ -34,7 +59,7 @@ export const Materials: React.FC = () => {
       };
       loadData();
     }
-  }, [subjectId, user?.email]);
+  }, [subjectId, user?.uid, user?.email]);
 
   if (loading) {
     return (
@@ -112,14 +137,14 @@ export const Materials: React.FC = () => {
               transition={{ delay: index * 0.1 }}
             >
               <Link
-                to={`/video/${material.id}`}
+                to={`/portal/video/${material.id}`}
                 className={`group block bg-white rounded-3xl border overflow-hidden hover:shadow-2xl transition-all duration-300 ${
                   isCompleted ? 'border-emerald-200' : 'border-stone-200 hover:border-emerald-500'
                 }`}
               >
                 <div className="aspect-video bg-stone-100 relative overflow-hidden">
                   <img 
-                    src={`https://img.youtube.com/vi/${material.youtubeVideoId}/maxresdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${resolveVideoId(material)}/maxresdefault.jpg`}
                     alt={material.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"

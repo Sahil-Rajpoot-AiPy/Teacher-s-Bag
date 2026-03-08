@@ -1,15 +1,25 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { OrientationOverlay } from './components/OrientationOverlay';
 import { Navbar } from './components/Navbar';
-import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
-import { Subjects } from './pages/Subjects';
-import { Materials } from './pages/Materials';
-import { VideoView } from './pages/VideoView';
 import { isFirebaseConfigured } from './services/firebase';
 import { AlertCircle, Settings } from 'lucide-react';
+import { useAuth } from './hooks/useAuth';
+import { AdminRoute } from './routes/AdminRoute';
+
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })));
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const Subjects = lazy(() => import('./pages/Subjects').then((m) => ({ default: m.Subjects })));
+const Materials = lazy(() => import('./pages/Materials').then((m) => ({ default: m.Materials })));
+const VideoView = lazy(() => import('./pages/VideoView').then((m) => ({ default: m.VideoView })));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then((m) => ({ default: m.AdminUsers })));
+const AdminClasses = lazy(() => import('./pages/admin/AdminClasses').then((m) => ({ default: m.AdminClasses })));
+const AdminSubjects = lazy(() => import('./pages/admin/AdminSubjects').then((m) => ({ default: m.AdminSubjects })));
+const AdminMaterials = lazy(() => import('./pages/admin/AdminMaterials').then((m) => ({ default: m.AdminMaterials })));
 
 const ConfigError = () => (
   <div className="min-h-screen flex items-center justify-center bg-stone-50 p-6">
@@ -39,42 +49,100 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-stone-50 selection:bg-emerald-100 selection:text-emerald-900">
-          <OrientationOverlay />
-          <Navbar />
-          <main className="relative z-10">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/class/:classId" element={
-                <ProtectedRoute>
-                  <Subjects />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/subject/:subjectId" element={
-                <ProtectedRoute>
-                  <Materials />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/video/:materialId" element={
-                <ProtectedRoute>
-                  <VideoView />
-                </ProtectedRoute>
-              } />
-
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-        </div>
+        <AppRoutes />
       </Router>
     </AuthProvider>
   );
 }
+
+const AppRoutes = () => {
+  const { user, loading, profile } = useAuth();
+  const role = profile?.role || 'teacher';
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-stone-50">
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-50 selection:bg-emerald-100 selection:text-emerald-900">
+      <OrientationOverlay />
+      <Navbar />
+      <main className="relative z-10">
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+
+            <Route
+              path="/portal"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/class/:classId"
+              element={
+                <ProtectedRoute>
+                  <Subjects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/subject/:subjectId"
+              element={
+                <ProtectedRoute>
+                  <Materials />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/portal/video/:materialId"
+              element={
+                <ProtectedRoute>
+                  <VideoView />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="classes" element={<AdminClasses />} />
+              <Route path="subjects" element={<AdminSubjects />} />
+              <Route path="materials" element={<AdminMaterials />} />
+            </Route>
+
+            <Route
+              path="/"
+              element={
+                user ? <Navigate to={role === 'admin' ? '/admin' : '/portal'} replace /> : <Navigate to="/login" replace />
+              }
+            />
+            <Route
+              path="*"
+              element={<Navigate to={user ? (role === 'admin' ? '/admin' : '/portal') : '/login'} replace />}
+            />
+          </Routes>
+        </Suspense>
+      </main>
+    </div>
+  );
+};
+
+const RouteLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh] bg-stone-50">
+    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);

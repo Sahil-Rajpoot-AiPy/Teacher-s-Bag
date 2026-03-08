@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Teacher's Bag">
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="#10b981" />
+  <path d="M12 26L32 18L52 26L32 34L12 26Z" fill="#ffffff" />
+  <path d="M20 31V38C20 41.5 25 44 32 44C39 44 44 41.5 44 38V31L32 36L20 31Z" fill="#ffffff" />
+  <circle cx="51" cy="29" r="2.6" fill="#ffffff" />
+  <path d="M51 31.5V40" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" />
+</svg>

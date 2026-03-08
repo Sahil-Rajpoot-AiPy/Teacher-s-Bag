@@ -14,16 +14,39 @@ export const VideoView: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [completed, setCompleted] = useState(false);
 
+  const videoId = (() => {
+    if (!material) return '';
+    if (material.youtubeVideoId) return material.youtubeVideoId;
+    if (!material.videoUrl) return '';
+    if (material.videoUrl.includes('youtu.be/')) {
+      return material.videoUrl.split('youtu.be/')[1]?.split(/[?&]/)[0] || '';
+    }
+    try {
+      const parsed = new URL(material.videoUrl);
+      return parsed.searchParams.get('v') || '';
+    } catch {
+      return '';
+    }
+  })();
+
   useEffect(() => {
-    if (materialId && user?.email) {
+    if (materialId && user?.uid) {
       const loadData = async () => {
         try {
-          const [materialData, completedLessons] = await Promise.all([
+          const [materialResult, completedResult] = await Promise.allSettled([
             fetchMaterialById(materialId),
-            fetchCompletedLessons(user.email)
+            fetchCompletedLessons(user.uid, undefined, user.email),
           ]);
-          setMaterial(materialData);
-          setCompleted(completedLessons.includes(materialId));
+
+          if (materialResult.status === 'fulfilled') {
+            setMaterial(materialResult.value);
+          }
+
+          if (completedResult.status === 'fulfilled') {
+            setCompleted(completedResult.value.includes(materialId));
+          } else {
+            setCompleted(false);
+          }
         } catch (error) {
           console.error('Error loading material:', error);
         } finally {
@@ -32,7 +55,7 @@ export const VideoView: React.FC = () => {
       };
       loadData();
     }
-  }, [materialId, user?.email]);
+  }, [materialId, user?.uid, user?.email]);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -41,11 +64,11 @@ export const VideoView: React.FC = () => {
   };
 
   const toggleCompleted = async () => {
-    if (!materialId || !user?.email || !material) return;
+    if (!materialId || !user?.uid || !material) return;
     const newState = !completed;
     setCompleted(newState);
     try {
-      await toggleLessonCompletion(user.email, materialId, material.subjectId, newState);
+      await toggleLessonCompletion(user.uid, materialId, material.subjectId, newState, user.email);
     } catch (error) {
       console.error('Error toggling completion:', error);
       setCompleted(!newState); // Rollback
@@ -64,7 +87,7 @@ export const VideoView: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto px-6 py-20 text-center">
         <h2 className="text-2xl font-bold text-stone-900 mb-4">Lesson Not Found</h2>
-        <Link to="/" className="text-emerald-600 font-bold hover:underline">Return to Dashboard</Link>
+        <Link to="/portal" className="text-emerald-600 font-bold hover:underline">Return to Dashboard</Link>
       </div>
     );
   }
@@ -86,7 +109,7 @@ export const VideoView: React.FC = () => {
       >
         <div className="aspect-video bg-black relative">
           <iframe
-            src={`https://www.youtube.com/embed/${material.youtubeVideoId}?autoplay=1&rel=0`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
             title={material.title}
             className="absolute inset-0 w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

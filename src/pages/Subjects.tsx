@@ -15,12 +15,18 @@ export const Subjects: React.FC = () => {
     if (classId) {
       const loadData = async () => {
         try {
-          const [subjectsData, classData] = await Promise.all([
+          const [subjectsResult, classResult] = await Promise.allSettled([
             fetchSubjectsByClass(classId),
-            fetchClassById(classId)
+            fetchClassById(classId),
           ]);
-          setSubjects(subjectsData);
-          setCurrentClass(classData);
+
+          if (subjectsResult.status === 'fulfilled') {
+            setSubjects(subjectsResult.value);
+          }
+
+          if (classResult.status === 'fulfilled') {
+            setCurrentClass(classResult.value);
+          }
         } catch (error) {
           console.error('Error loading subjects:', error);
         } finally {
@@ -42,7 +48,7 @@ export const Subjects: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       <Link 
-        to="/" 
+        to="/portal" 
         className="inline-flex items-center gap-2 text-stone-500 hover:text-emerald-600 font-medium mb-8 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -75,7 +81,7 @@ export const Subjects: React.FC = () => {
             transition={{ delay: index * 0.05 }}
           >
             <Link
-              to={`/subject/${subject.id}`}
+              to={`/portal/subject/${subject.id}`}
               className="group flex items-center justify-between bg-white p-6 rounded-2xl border border-stone-200 hover:border-emerald-500 hover:shadow-xl transition-all duration-200"
             >
               <div className="flex items-center gap-4">

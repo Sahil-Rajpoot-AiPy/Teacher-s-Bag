@@ -4,33 +4,18 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { GraduationCap, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 import { auth, isFirebaseConfigured } from '../services/firebase';
 import { motion } from 'framer-motion';
-import { seedDemoData } from '../services/seed';
-import { Database } from 'lucide-react';
+import { fetchUserProfile } from '../services/firestore';
+import { resolveUserRole } from '../utils/roles';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [seeding, setSeeding] = useState(false);
-  const [seedMessage, setSeedMessage] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
-
-  const handleSeed = async (force = false) => {
-    setSeeding(true);
-    setSeedMessage('');
-    try {
-      const result = await seedDemoData(force);
-      setSeedMessage(result);
-    } catch (err: any) {
-      setSeedMessage('Error seeding data. Check console.');
-    } finally {
-      setSeeding(false);
-    }
-  };
+  const from = location.state?.from?.pathname;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +27,33 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate(from, { replace: true });
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      let profile = null;
+      try {
+        profile = await fetchUserProfile(cred.user.uid, cred.user.email);
+      } catch (profileErr: any) {
+        // If profile read is blocked by rules, default to teacher portal.
+        if (profileErr?.code !== 'permission-denied') {
+          throw profileErr;
+        }
+      }
+
+      const role = resolveUserRole(profile, cred.user.email);
+      const destination = role === 'admin' ? '/admin' : '/portal';
+      if (from && from !== '/' && from.startsWith(destination)) {
+        navigate(from, { replace: true });
+      } else {
+        navigate(destination, { replace: true });
+      }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError('Invalid email or password. Please try again.');
+      const code = err?.code || 'auth/unknown';
+      const message = err?.message || 'Please check your credentials.';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        setError('Invalid email or password. Please try again.');
+      } else {
+        setError(`Login failed (${code}): ${message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -126,44 +133,6 @@ export const Login: React.FC = () => {
             <p className="text-stone-400 text-sm">
               Contact administrator if you forgot your credentials.
             </p>
-            
-            <div className="pt-4 flex flex-col items-center gap-3">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => handleSeed(false)}
-                  disabled={seeding}
-                  className="inline-flex items-center gap-2 text-[10px] font-bold text-stone-400 hover:text-emerald-600 transition-colors uppercase tracking-widest"
-                >
-                  <Database className="w-3 h-3" />
-                  <span>Seed Data</span>
-                </button>
-                
-                <button
-                  onClick={() => handleSeed(true)}
-                  disabled={seeding}
-                  className="inline-flex items-center gap-2 text-[10px] font-bold text-stone-400 hover:text-red-500 transition-colors uppercase tracking-widest"
-                  title="Clears existing classes/subjects/materials and re-seeds"
-                >
-                  <Database className="w-3 h-3" />
-                  <span>Clear & Seed</span>
-                </button>
-              </div>
-
-              {seeding && (
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 border border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Processing...</span>
-                </div>
-              )}
-
-              {seedMessage && (
-                <p className={`text-[10px] font-bold uppercase tracking-tighter ${
-                  seedMessage.includes('Error') ? 'text-red-400' : 'text-emerald-500'
-                }`}>
-                  {seedMessage}
-                </p>
-              )}
-            </div>
           </div>
         </div>
       </motion.div>

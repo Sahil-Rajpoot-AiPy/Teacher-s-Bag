@@ -53,7 +53,7 @@ export const Dashboard: React.FC = () => {
             transition={{ delay: index * 0.1 }}
           >
             <Link
-              to={`/class/${cls.id}`}
+              to={`/portal/class/${cls.id}`}
               className="group block bg-white p-8 rounded-3xl border border-stone-200 hover:border-emerald-500 hover:shadow-2xl hover:shadow-emerald-100 transition-all duration-300 relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 -mr-16 -mt-16 rounded-full group-hover:scale-150 transition-transform duration-500" />

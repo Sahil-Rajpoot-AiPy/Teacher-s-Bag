@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, profile } = useAuth();
   const location = useLocation();
 
@@ -18,8 +18,8 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (profile?.role === 'admin' && location.pathname.startsWith('/portal')) {
-    return <Navigate to="/admin" replace />;
+  if (profile?.role !== 'admin') {
+    return <Navigate to="/portal" replace />;
   }
 
   return <>{children}</>;
