@@ -1,97 +1,167 @@
 # Teacher's Bag
 
-Teacher's Bag is a web application for organizing teaching materials by class and subject, with separate teacher and admin experiences.
+A role-based web application for organizing training and teaching materials by class and subject, with separate teacher and administrator experiences.
 
-> **Status:** In development. The project is functional enough to demonstrate its architecture and core workflows, but it is not yet presented as a finished production product.
+> **Status:** Functional portfolio project. Core authentication, role-based navigation, content organization, progress tracking, and admin workflows are implemented. The project is still being refined with stronger testing, demo content, and visual documentation.
 
-## Why I built it
+## The problem
 
-Teachers often keep videos, notes, links, and class resources scattered across devices and apps. Teacher's Bag explores a cleaner way to organize those resources in one place while giving administrators control over users, classes, subjects, and materials.
+Teaching and training resources often end up scattered across folders, messaging apps, links, and individual devices. Teacher's Bag explores a simple central portal where teachers can move through structured class material while administrators manage the content and users behind it.
 
-## Current features
+## Core features
 
-- Firebase Authentication
-- Protected teacher routes
-- Role-based admin access
-- Teacher dashboard
-- Class and subject navigation
-- Teaching-material views
-- Video-material viewing
-- Admin dashboard
+### Teacher experience
+
+- Email/password authentication
+- Protected application routes
+- Dashboard for accessing assigned learning content
+- Class → subject → material navigation
+- Video-based material viewing
+- Per-user completion tracking
+- Responsive interface
+
+### Admin experience
+
+- Separate admin-only route hierarchy
 - User management
 - Class management
 - Subject management
 - Material management
-- Lazy-loaded routes for a lighter initial bundle
-- Responsive interface built with Tailwind CSS
+- Role-aware routing and authorization
 
 ## Tech stack
 
-- React 19
-- TypeScript
-- Vite
-- Firebase Authentication
-- Cloud Firestore
-- React Router
-- Tailwind CSS
-- Framer Motion
-- Lucide React
+- **React 19**
+- **TypeScript**
+- **Vite**
+- **Firebase Authentication**
+- **Cloud Firestore**
+- **React Router**
+- **Tailwind CSS**
+- **Framer Motion**
+- **Lucide React**
 
-## Application structure
+## Architecture
 
-The app currently separates the two main experiences:
+The application separates user-facing and administrative workflows while sharing the same authentication and Firestore-backed data layer.
 
-### Teacher portal
+```text
+Authentication
+     │
+     ├── Teacher
+     │    └── Portal → Classes → Subjects → Materials → Progress
+     │
+     └── Admin
+          └── Dashboard → Users / Classes / Subjects / Materials
+```
 
-Authenticated teachers can move through their dashboard, classes, subjects, and learning materials.
+Routes are lazy-loaded to reduce the initial bundle, and protected/admin routes prevent unauthenticated or unauthorized users from entering restricted areas.
 
-### Admin area
+## Security model
 
-Admin-only routes provide management screens for users, classes, subjects, and materials.
+Firestore rules are included in the repository and follow a deny-by-default approach.
+
+- Core learning content can be read only by authenticated users
+- Classes, subjects, and materials can be created, changed, or deleted only by admins
+- Users can access their own profile/progress data
+- Admins can manage user records
+- Unmatched Firestore paths are denied by default
+
+The Firebase client configuration is loaded from environment variables rather than hardcoded credentials.
+
+## Data model
+
+The current Firestore structure is centered around four main collections:
+
+```text
+classes
+subjects
+materials
+users
+  └── completions
+```
+
+User documents carry role information used by the application and Firestore rules to distinguish teacher and administrator capabilities.
 
 ## Local development
 
-### Prerequisites
+### Requirements
 
 - Node.js
-- A Firebase project
+- npm
+- A Firebase project with Authentication and Firestore enabled
 
-### Install
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-Create an `.env.local` file and provide the Firebase values used by the application:
+### 2. Configure Firebase
+
+Copy `.env.example` to `.env.local` and fill in your Firebase project values:
 
 ```env
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-VITE_FIREBASE_MEASUREMENT_ID=
+VITE_FIREBASE_API_KEY=""
+VITE_FIREBASE_AUTH_DOMAIN=""
+VITE_FIREBASE_PROJECT_ID=""
+VITE_FIREBASE_STORAGE_BUCKET=""
+VITE_FIREBASE_MESSAGING_SENDER_ID=""
+VITE_FIREBASE_APP_ID=""
+VITE_FIREBASE_MEASUREMENT_ID=""
 ```
 
-Then start the development server:
+An optional `VITE_ADMIN_EMAILS` value is also supported as a fallback, although Firestore role data is the preferred source of authorization.
+
+### 3. Start the development server
 
 ```bash
 npm run dev
 ```
 
-## Before public release
+### 4. Verify the project
 
-I still want to improve several areas before treating this as a polished public project:
+```bash
+npm run lint
+npm run build
+```
 
-- Add representative screenshots or a short product demo
-- Document the Firestore data model and security rules
-- Add clearer setup instructions for sample/demo data
-- Add tests for important authentication and role flows
-- Review accessibility and responsive behavior
-- Deploy a safe demo environment
-- Remove remaining scaffold-specific naming and configuration assumptions
+## Firebase deployment
 
-## Portfolio note
+The repository includes Firebase Hosting configuration, Firestore rules, and Firestore index configuration.
 
-This project demonstrates full-stack application thinking around authentication, route protection, role-based access, data organization, and administrative workflows. Once the remaining presentation and production-hardening work is complete, I plan to publish it as one of my featured web application projects.
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+npm run build
+firebase deploy --only hosting
+```
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for the complete deployment checklist and admin bootstrap steps.
+
+## What this project demonstrates
+
+Teacher's Bag is intended to demonstrate more than UI work. It includes practical application concerns such as:
+
+- Authentication
+- Role-based access control
+- Protected routing
+- Cloud-hosted application data
+- Firestore security rules
+- User-specific progress state
+- Admin/user workflow separation
+- Responsive component-based frontend development
+- Deployment configuration
+
+## Next improvements
+
+- Add representative screenshots and/or a short demo video
+- Add automated tests for authentication and role-sensitive workflows
+- Add seeded demo content for easier evaluation
+- Continue accessibility and responsive-behavior review
+- Deploy a safe public demo environment
+
+## Author
+
+Built by **Saaleh Ijaz** as a practical full-stack web application project.
+
+[GitHub Profile](https://github.com/Sahil-Rajpoot-AiPy) · [LinkedIn](https://www.linkedin.com/in/saaleh-ijaz-aipy/)
