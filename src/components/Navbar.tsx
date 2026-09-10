@@ -37,11 +37,12 @@ export const Navbar: React.FC = () => {
             <p className="text-xs text-stone-500">{profile?.role === 'admin' ? 'Administrator' : 'Teacher Portal'}</p>
           </div>
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2 text-stone-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 font-medium"
           >
             <LogOut className="w-4 h-4" />
-            <span>Logout</span>
+            <span className="hidden sm:inline">Sign out</span>
           </button>
         </div>
       </div>

@@ -1,33 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchMaterialById, toggleLessonCompletion, fetchCompletedLessons } from '../services/firestore';
 import { MaterialData } from '../types';
 import { ArrowLeft, Share2, Bookmark, Info, PlayCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { extractYouTubeVideoId } from '../utils/youtube';
 
 export const VideoView: React.FC = () => {
   const { materialId } = useParams<{ materialId: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [material, setMaterial] = useState<MaterialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  const videoId = (() => {
-    if (!material) return '';
-    if (material.youtubeVideoId) return material.youtubeVideoId;
-    if (!material.videoUrl) return '';
-    if (material.videoUrl.includes('youtu.be/')) {
-      return material.videoUrl.split('youtu.be/')[1]?.split(/[?&]/)[0] || '';
-    }
-    try {
-      const parsed = new URL(material.videoUrl);
-      return parsed.searchParams.get('v') || '';
-    } catch {
-      return '';
-    }
-  })();
+  const videoId = extractYouTubeVideoId(material?.youtubeVideoId || material?.videoUrl);
 
   useEffect(() => {
     if (materialId && user?.uid) {
@@ -94,13 +83,14 @@ export const VideoView: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-      <Link 
-        to={-1 as any} 
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-stone-500 hover:text-emerald-600 font-medium mb-8 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         <span>Back to Lessons</span>
-      </Link>
+      </button>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -131,6 +121,7 @@ export const VideoView: React.FC = () => {
             
             <div className="flex items-center gap-3">
               <button 
+                type="button"
                 onClick={toggleCompleted}
                 className={`p-3 rounded-xl transition-all border flex items-center gap-2 ${
                   completed 
@@ -144,7 +135,9 @@ export const VideoView: React.FC = () => {
                 </span>
               </button>
               <button 
+                type="button"
                 onClick={handleShare}
+                aria-label="Copy lesson link"
                 className="p-3 bg-stone-50 text-stone-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-stone-100"
               >
                 <Share2 className="w-5 h-5" />

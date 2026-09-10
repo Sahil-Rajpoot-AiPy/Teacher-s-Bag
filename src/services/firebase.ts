@@ -12,11 +12,16 @@ export const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Check if config is valid (at least apiKey must be present and not a placeholder)
-export const isFirebaseConfigured = 
-  !!firebaseConfig.apiKey && 
-  firebaseConfig.apiKey !== "" && 
-  !firebaseConfig.apiKey.includes("YOUR_");
+const requiredConfigValues = [
+  firebaseConfig.apiKey,
+  firebaseConfig.authDomain,
+  firebaseConfig.projectId,
+  firebaseConfig.appId,
+];
+
+export const isFirebaseConfigured = requiredConfigValues.every(
+  (value) => typeof value === 'string' && value.trim() !== '' && !value.includes('YOUR_')
+);
 
 let app;
 if (isFirebaseConfigured) {

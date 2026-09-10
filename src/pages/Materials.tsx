@@ -1,36 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchMaterialsBySubject, fetchSubjectById, fetchCompletedLessons } from '../services/firestore';
 import { MaterialData, SubjectData } from '../types';
 import { Play, ArrowLeft, Video, Clock, Info, CheckCircle2, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { LoadError } from '../components/LoadError';
+import { extractYouTubeVideoId } from '../utils/youtube';
 
 export const Materials: React.FC = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [materials, setMaterials] = useState<MaterialData[]>([]);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [currentSubject, setCurrentSubject] = useState<SubjectData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  const resolveVideoId = (material: MaterialData) => {
-    if (material.youtubeVideoId) return material.youtubeVideoId;
-    if (!material.videoUrl) return '';
-    if (material.videoUrl.includes('youtu.be/')) {
-      return material.videoUrl.split('youtu.be/')[1]?.split(/[?&]/)[0] || '';
-    }
-    try {
-      const parsed = new URL(material.videoUrl);
-      return parsed.searchParams.get('v') || '';
-    } catch {
-      return '';
-    }
-  };
-
-  useEffect(() => {
+  const loadData = async () => {
     if (subjectId && user?.uid) {
-      const loadData = async () => {
+        setLoading(true);
+        setLoadError(false);
         try {
           const [materialsResult, subjectResult, completedResult] = await Promise.allSettled([
             fetchMaterialsBySubject(subjectId),
@@ -51,14 +42,20 @@ export const Materials: React.FC = () => {
           } else {
             setCompletedIds([]);
           }
+          if (materialsResult.status === 'rejected' && subjectResult.status === 'rejected') {
+            setLoadError(true);
+          }
         } catch (error) {
           console.error('Error loading materials:', error);
+          setLoadError(true);
         } finally {
           setLoading(false);
         }
-      };
-      loadData();
     }
+  };
+
+  useEffect(() => {
+      loadData();
   }, [subjectId, user?.uid, user?.email]);
 
   if (loading) {
@@ -75,13 +72,14 @@ export const Materials: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
-      <Link 
-        to={-1 as any} 
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-stone-500 hover:text-emerald-600 font-medium mb-8 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         <span>Back to Subjects</span>
-      </Link>
+      </button>
 
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10">
         <div className="flex-1">
@@ -126,7 +124,9 @@ export const Materials: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {loadError && <LoadError onRetry={loadData} />}
+
+      {!loadError && <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {materials.map((material, index) => {
           const isCompleted = completedIds.includes(material.id);
           return (
@@ -144,7 +144,7 @@ export const Materials: React.FC = () => {
               >
                 <div className="aspect-video bg-stone-100 relative overflow-hidden">
                   <img 
-                    src={`https://img.youtube.com/vi/${resolveVideoId(material)}/maxresdefault.jpg`}
+                    src={`https://img.youtube.com/vi/${extractYouTubeVideoId(material.youtubeVideoId || material.videoUrl)}/hqdefault.jpg`}
                     alt={material.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
@@ -183,9 +183,9 @@ export const Materials: React.FC = () => {
             </motion.div>
           );
         })}
-      </div>
+      </div>}
 
-      {materials.length === 0 && !loading && (
+      {materials.length === 0 && !loading && !loadError && (
         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-stone-300">
           <p className="text-stone-400 text-lg italic">No lessons found</p>
         </div>

@@ -30,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user?.email) {
         try {
           const userProfile = await fetchUserProfile(user.uid, user.email);
-          const resolvedRole = resolveUserRole(userProfile, user.email);
+          const resolvedRole = resolveUserRole(userProfile);
           setProfile(
             userProfile
               ? { ...userProfile, role: resolvedRole }
@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error) {
           console.error('Error fetching user profile:', error);
           const fallbackName = user.displayName || user.email || '';
-          const fallbackRole = resolveUserRole(null, user.email);
+          const fallbackRole = resolveUserRole(null);
           setProfile({
             id: user.uid,
             uid: user.uid,

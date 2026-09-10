@@ -4,22 +4,28 @@ import { fetchClasses } from '../services/firestore';
 import { ClassData } from '../types';
 import { BookOpen, ChevronRight, LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { LoadError } from '../components/LoadError';
 
 export const Dashboard: React.FC = () => {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    const loadClasses = async () => {
+  const loadClasses = async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         const data = await fetchClasses();
         setClasses(data);
       } catch (error) {
         console.error('Error loading classes:', error);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
-    };
+  };
+
+  useEffect(() => {
     loadClasses();
   }, []);
 
@@ -44,6 +50,9 @@ export const Dashboard: React.FC = () => {
         <p className="text-stone-500 mt-2 text-lg">Choose a class to view available training subjects.</p>
       </div>
 
+      {loadError && <LoadError onRetry={loadClasses} />}
+
+      {!loadError && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {classes.map((cls, index) => (
           <motion.div
@@ -81,8 +90,9 @@ export const Dashboard: React.FC = () => {
           </motion.div>
         ))}
       </div>
+      )}
 
-      {classes.length === 0 && !loading && (
+      {classes.length === 0 && !loading && !loadError && (
         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-stone-300">
           <p className="text-stone-400 text-lg italic">
             No classes found in the database.

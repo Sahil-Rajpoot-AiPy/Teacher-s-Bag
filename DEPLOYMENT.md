@@ -14,7 +14,6 @@ Set these in your deployment environment:
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_MEASUREMENT_ID` (optional)
-- `VITE_ADMIN_EMAILS` (optional fallback list, comma-separated)
 
 ## 3. Firestore security and indexes
 This repo now tracks:
@@ -41,3 +40,4 @@ Deploy them with:
 2. Admin login -> lands on `/admin`.
 3. Admin can create class/subject/lesson/user (teacher only).
 4. Teacher can mark lesson complete and progress persists.
+5. A teacher cannot change their own `role`, `uid`, or `email` fields in Firestore.

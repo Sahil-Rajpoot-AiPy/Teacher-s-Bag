@@ -2,7 +2,6 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { OrientationOverlay } from './components/OrientationOverlay';
 import { Navbar } from './components/Navbar';
 import { isFirebaseConfigured } from './services/firebase';
 import { AlertCircle, Settings } from 'lucide-react';
@@ -29,7 +28,7 @@ const ConfigError = () => (
       </div>
       <h1 className="text-2xl font-bold text-stone-900 mb-4">Configuration Required</h1>
       <p className="text-stone-500 mb-8 leading-relaxed">
-        Firebase is not yet configured. Please add your Firebase API keys to the <strong>Secrets</strong> panel in AI Studio to get started.
+        Firebase is not configured for this build. Copy <strong>.env.example</strong> to <strong>.env.local</strong> and add your Firebase web app values.
       </p>
       <div className="bg-stone-50 p-4 rounded-xl flex items-start gap-3 text-left border border-stone-100">
         <AlertCircle className="w-5 h-5 text-stone-400 flex-shrink-0 mt-0.5" />
@@ -69,7 +68,6 @@ const AppRoutes = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 selection:bg-emerald-100 selection:text-emerald-900">
-      <OrientationOverlay />
       <Navbar />
       <main className="relative z-10">
         <Suspense fallback={<RouteLoader />}>

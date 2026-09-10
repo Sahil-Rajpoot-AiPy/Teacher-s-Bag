@@ -33,7 +33,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
+      // Teachers may edit only their display name. Identity and role fields stay
+      // admin-controlled so a user cannot promote their own account.
+      allow update: if isAdmin()
+        || (isOwner(userId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["name"]));
       allow delete: if isAdmin();
 
       match /completions/{materialId} {

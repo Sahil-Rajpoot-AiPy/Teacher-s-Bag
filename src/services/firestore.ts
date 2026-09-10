@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { ClassData, SubjectData, MaterialData, UserDoc } from '../types';
+import { extractYouTubeVideoId } from '../utils/youtube';
 
 export const fetchClasses = async (): Promise<ClassData[]> => {
   const classesRef = collection(db, 'classes');
@@ -61,7 +62,7 @@ export const fetchMaterialsBySubject = async (subjectId: string): Promise<Materi
     return {
       id: materialDoc.id,
       ...data,
-      youtubeVideoId: data.youtubeVideoId ?? extractVideoId(data.videoUrl),
+      youtubeVideoId: data.youtubeVideoId ?? extractYouTubeVideoId(data.videoUrl),
     } as MaterialData;
   });
   return materials.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -75,7 +76,7 @@ export const fetchMaterialById = async (materialId: string): Promise<MaterialDat
     return {
       id: snapshot.id,
       ...data,
-      youtubeVideoId: data.youtubeVideoId ?? extractVideoId(data.videoUrl),
+      youtubeVideoId: data.youtubeVideoId ?? extractYouTubeVideoId(data.videoUrl),
     } as MaterialData;
   }
   return null;
@@ -235,24 +236,6 @@ export const fetchCompletedLessons = async (
   }
 
   return Array.from(completionIds);
-};
-
-const extractVideoId = (videoUrl?: string): string => {
-  if (!videoUrl) return '';
-  if (!videoUrl.includes('youtube.com') && !videoUrl.includes('youtu.be')) {
-    return videoUrl;
-  }
-
-  try {
-    if (videoUrl.includes('youtu.be/')) {
-      return videoUrl.split('youtu.be/')[1]?.split(/[?&]/)[0] || '';
-    }
-
-    const parsed = new URL(videoUrl);
-    return parsed.searchParams.get('v') || '';
-  } catch {
-    return '';
-  }
 };
 
 const normalizeUserDoc = (

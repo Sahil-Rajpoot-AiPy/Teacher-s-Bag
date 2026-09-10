@@ -4,16 +4,19 @@ import { fetchSubjectsByClass, fetchClassById } from '../services/firestore';
 import { SubjectData, ClassData } from '../types';
 import { Book, ChevronRight, ArrowLeft, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { LoadError } from '../components/LoadError';
 
 export const Subjects: React.FC = () => {
   const { classId } = useParams<{ classId: string }>();
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [currentClass, setCurrentClass] = useState<ClassData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const loadData = async () => {
     if (classId) {
-      const loadData = async () => {
+        setLoading(true);
+        setLoadError(false);
         try {
           const [subjectsResult, classResult] = await Promise.allSettled([
             fetchSubjectsByClass(classId),
@@ -27,14 +30,20 @@ export const Subjects: React.FC = () => {
           if (classResult.status === 'fulfilled') {
             setCurrentClass(classResult.value);
           }
+          if (subjectsResult.status === 'rejected' && classResult.status === 'rejected') {
+            setLoadError(true);
+          }
         } catch (error) {
           console.error('Error loading subjects:', error);
+          setLoadError(true);
         } finally {
           setLoading(false);
         }
-      };
-      loadData();
     }
+  };
+
+  useEffect(() => {
+      loadData();
   }, [classId]);
 
   if (loading) {
@@ -72,7 +81,9 @@ export const Subjects: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {loadError && <LoadError onRetry={loadData} />}
+
+      {!loadError && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {subjects.map((subject, index) => (
           <motion.div
             key={subject.id}
@@ -99,9 +110,9 @@ export const Subjects: React.FC = () => {
             </Link>
           </motion.div>
         ))}
-      </div>
+      </div>}
 
-      {subjects.length === 0 && !loading && (
+      {subjects.length === 0 && !loading && !loadError && (
         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-stone-300">
           <p className="text-stone-400 text-lg italic">No subjects found</p>
         </div>

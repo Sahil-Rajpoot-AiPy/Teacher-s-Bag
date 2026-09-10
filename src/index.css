@@ -6,8 +6,24 @@
 }
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply font-sans antialiased text-stone-900 bg-stone-50;
+    @apply min-w-80 font-sans antialiased text-stone-900 bg-stone-50;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2;
   }
 }
 

@@ -20,7 +20,7 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth || !isFirebaseConfigured) {
-      setError('Firebase is not configured. Please set your API keys in the Secrets panel.');
+      setError('Firebase is not configured. Add the required values to .env.local and restart the app.');
       return;
     }
     setError('');
@@ -38,7 +38,7 @@ export const Login: React.FC = () => {
         }
       }
 
-      const role = resolveUserRole(profile, cred.user.email);
+      const role = resolveUserRole(profile);
       const destination = role === 'admin' ? '/admin' : '/portal';
       if (from && from !== '/' && from.startsWith(destination)) {
         navigate(from, { replace: true });
@@ -48,11 +48,10 @@ export const Login: React.FC = () => {
     } catch (err: any) {
       console.error('Login error:', err);
       const code = err?.code || 'auth/unknown';
-      const message = err?.message || 'Please check your credentials.';
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
         setError('Invalid email or password. Please try again.');
       } else {
-        setError(`Login failed (${code}): ${message}`);
+        setError('Unable to sign in right now. Please try again or contact your administrator.');
       }
     } finally {
       setLoading(false);
@@ -86,6 +85,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                   placeholder="teacher@school.com"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -101,6 +101,7 @@ export const Login: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   required
                 />
               </div>
@@ -131,7 +132,7 @@ export const Login: React.FC = () => {
 
           <div className="mt-10 pt-8 border-t border-stone-100 text-center space-y-4">
             <p className="text-stone-400 text-sm">
-              Contact administrator if you forgot your credentials.
+              Contact your administrator if you need access or forgot your password.
             </p>
           </div>
         </div>
